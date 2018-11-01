@@ -1110,7 +1110,16 @@ function listtests {
     if (-Not ($WntdTarget = $WntdMachine.GetTestTargets() | Where-Object { $_.Key -eq $target })) { throw "A target that matches the target's key given was not found in the specified machine, aborting..." }
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
-    if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+
+    $WntdPITargets = New-Object System.Collections.ArrayList
+
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.AddRange($WntdPITargetsToAdd)
+    } else {
+        if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.Add($WntdPITarget) | Out-Null
+    }
 
     $WntdTests = New-Object System.Collections.ArrayList
 
@@ -1118,10 +1127,10 @@ function listtests {
         $PlaylistManager = New-Object Microsoft.Windows.Kits.Hardware.ObjectModel.PlaylistManager $WntdProject
         $WntdPlaylist = [Microsoft.Windows.Kits.Hardware.ObjectModel.PlaylistManager]::DeserializePlaylist($playlist)
         foreach ($tTest in $PlaylistManager.GetTestsFromProjectThatMatchPlaylist($WntdPlaylist)) {
-            if ($tTest.GetTestTargets() | Where-Object { $_.Equals($WntdPITarget) }) { $WntdTests.Add($tTest) | Out-Null }
+            if ($tTest.GetTestTargets() | Where-Object { $WntdPITargets.Contains($_) }) { $WntdTests.Add($tTest) | Out-Null }
         }
     } else {
-         $WntdTests.AddRange($WntdPITarget.GetTests())
+         $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
     }
 
     if (-Not $json) {

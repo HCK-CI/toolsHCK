@@ -901,6 +901,7 @@ function createprojecttarget {
                 $WntdtoTarget.Add($WntdTarget) | Out-Null
             }
             foreach ($toTarget in $WntdtoTarget) {
+                if ($WntdPITargets | Where-Object { $_.Key -eq $toTarget.Key }) { throw "The target is already being targeted in the project, aborting..." }
                 switch ($toTarget.TargetType) {
                     "Filter" { [String[]]$HardwareIds = $toTarget.Key }
                     "System" { [String[]]$HardwareIds = "[SYSTEM]" }

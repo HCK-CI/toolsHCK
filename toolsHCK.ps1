@@ -887,6 +887,7 @@ function createprojecttarget {
     try {
         $WntdPITargets = $WntdPI.GetTargets()
         if (($WntdTarget.TargetType -eq "System") -and ($WntdPITargets | Where-Object { $_.TargetType -ne "System" })) { throw "The project already has non-system targets, can't mix system and non-system targets, aborting..." }
+        if (($WntdTarget.TargetType -ne "System") -and ($WntdPITargets | Where-Object { $_.TargetType -eq "System" })) { throw "The project already has system targets, can't mix system and non-system targets, aborting..." }
         else {
             if (-Not $json) { Write-Output "Creating a new project's target from $($WntdTarget.Name)." }
             $WntdtoTarget = New-Object System.Collections.ArrayList
@@ -907,11 +908,7 @@ function createprojecttarget {
                     $WntdDeviceFamily = $Manager.CreateDeviceFamily($HardwareIds[0], $HardwareIds)
                 }
                 $WntdTargetFamily = $WntdPI.CreateTargetFamily($WntdDeviceFamily)
-                $WntdPI.FindTargetFromDeviceFamily($WntdDeviceFamily) | foreach {
-                    if (($WntdTargetFamily.IsValidTarget($_)) -and ($_.Equals($toTarget))) {
-                        $WntdTargetFamily.CreateTarget($_) | Out-Null
-                    }
-                }
+                $WntdTargetFamily.CreateTarget($toTarget) | Out-Null
             }
         }
     } catch {

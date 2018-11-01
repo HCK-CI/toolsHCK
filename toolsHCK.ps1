@@ -893,7 +893,9 @@ function createprojecttarget {
             $WntdtoTarget = New-Object System.Collections.ArrayList
             if ($WntdTarget.TargetType -eq "TargetCollection") {
                 foreach ($toTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
-                    $WntdtoTarget.Add($toTarget) | Out-Null
+                    if ($toTarget.Machine.Equals($WntdMachine)){
+                        $WntdtoTarget.Add($toTarget) | Out-Null
+                    }
                 }
             } else {
                 $WntdtoTarget.Add($WntdTarget) | Out-Null

@@ -1112,12 +1112,16 @@ function listtests {
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
     if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
 
+    $WntdTests = New-Object System.Collections.ArrayList
+
     if (-Not [String]::IsNullOrEmpty($playlist)) {
         $PlaylistManager = New-Object Microsoft.Windows.Kits.Hardware.ObjectModel.PlaylistManager $WntdProject
         $WntdPlaylist = [Microsoft.Windows.Kits.Hardware.ObjectModel.PlaylistManager]::DeserializePlaylist($playlist)
-        $WntdTests = $PlaylistManager.GetTestsFromProjectThatMatchPlaylist($WntdPlaylist)
+        foreach ($tTest in $PlaylistManager.GetTestsFromProjectThatMatchPlaylist($WntdPlaylist)) {
+            if ($tTest.GetTestTargets() | Where-Object { $_.Equals($WntdPITarget) }) { $WntdTests.Add($tTest) | Out-Null }
+        }
     } else {
-         $WntdTests = $WntdPITarget.GetTests()
+         $WntdTests.AddRange($WntdPITarget.GetTests())
     }
 
     if (-Not $json) {

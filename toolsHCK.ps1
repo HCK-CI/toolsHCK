@@ -1006,6 +1006,21 @@ function deleteprojecttarget {
     $WntdPI.DeleteTarget($WntdTarget.Key, $WntdTarget.Machine)
     if ($WntdPI.GetTargets().Count -lt 1) { $WntdProject.DeleteProductInstance($WntdPI.Name) }
 }
+
+function parsescheduleoptions {
+    [CmdletBinding()]
+    param([Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption] $scheduleoptions)
+
+    $ParsedScheduleOptions = New-Object System.Collections.ArrayList
+
+    if (($scheduleoptions -band [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::RequiresMultipleMachines) -eq [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::RequiresMultipleMachine) { $ParsedScheduleOptions.Add([Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::RequiresMultipleMachine.ToString()) | Out-Null }
+    if (($scheduleoptions -band [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ScheduleOnAllTargets) -eq [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ScheduleOnAllTargets) { $ParsedScheduleOptions.Add([Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ScheduleOnAllTargets.ToString()) | Out-Null }
+    if (($scheduleoptions -band [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ScheduleOnAnyTarget) -eq [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ScheduleOnAnyTarget) { $ParsedScheduleOptions.Add([Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ScheduleOnAnyTarget.ToString()) | Out-Null }
+    if (($scheduleoptions -band [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ConsolidateScheduleAcrossTargets) -eq [Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ConsolidateScheduleAcrossTargets) { $ParsedScheduleOptions.Add([Microsoft.Windows.Kits.Hardware.ObjectModel.DistributionOption]::ConsolidateScheduleAcrossTargets.ToString()) | Out-Null }
+
+    return ,$ParsedScheduleOptions
+}
+
 #
 # ListTests
 function listtests {
@@ -1160,7 +1175,7 @@ function listtests {
             Write-Output "    Estimated runtime              : $($tTest.EstimatedRuntime)"
             Write-Output "    Requires special configuration : $($tTest.RequiresSpecialConfiguration)"
             Write-Output "    Requires supplemental content  : $($tTest.RequiresSupplementalContent)"
-            Write-Output "    Schedule options               : $($tTest.ScheduleOptions)"
+            Write-Output "    Schedule options               : $((parsescheduleoptions($tTest.ScheduleOptions)) -Join ', ')"
             Write-Output "    Test status                    : $($tTest.Status)"
             Write-Output "    Execution State                : $($tTest.ExecutionState)"
             Write-Output ""
@@ -1174,7 +1189,7 @@ function listtests {
             } elseif (-Not (($notrun -and ($tTest.Status -eq "NotRun")) -or ($failed -and ($tTest.Status -eq "Failed")) -or ($passed -and ($tTest.Status -eq "Passed")) -or ($running -and ($tTest.ExecutionState -eq "Running")) -or ($inqueue -and ($tTest.ExecutionState -eq "InQueue")))) {
                 continue
             }
-            $testslist.Add((New-Test $tTest.Name $tTest.Id $tTest.TestType.ToString() $tTest.EstimatedRuntime.ToString() $tTest.RequiresSpecialConfiguration.ToString() $tTest.RequiresSupplementalContent.ToString() ($tTest.ScheduleOptions.ToString() -split ', ') $tTest.Status.ToString() $tTest.ExecutionState.ToString())) | Out-Null
+            $testslist.Add((New-Test $tTest.Name $tTest.Id $tTest.TestType.ToString() $tTest.EstimatedRuntime.ToString() $tTest.RequiresSpecialConfiguration.ToString() $tTest.RequiresSupplementalContent.ToString() (parsescheduleoptions($tTest.ScheduleOptions)) $tTest.Status.ToString() $tTest.ExecutionState.ToString())) | Out-Null
         }
         ConvertTo-Json @($testslist) -Compress
     }
@@ -1278,13 +1293,13 @@ function gettestinfo {
         Write-Output "    Estimated runtime              : $($WntdTest.EstimatedRuntime)"
         Write-Output "    Requires special configuration : $($WntdTest.RequiresSpecialConfiguration)"
         Write-Output "    Requires supplemental content  : $($WntdTest.RequiresSupplementalContent)"
-        Write-Output "    Schedule options               : $($WntdTest.ScheduleOptions)"
+        Write-Output "    Schedule options               : $((parsescheduleoptions($tTest.ScheduleOptions)) -Join ', ')"
         Write-Output "    Test status                    : $($WntdTest.Status)"
         Write-Output "    Execution State                : $($WntdTest.ExecutionState)"
         Write-Output ""
         Write-Output "============================================="
     } else {
-        @((New-Test $WntdTest.Name $WntdTest.Id $WntdTest.TestType.ToString() $WntdTest.EstimatedRuntime.ToString() $WntdTest.RequiresSpecialConfiguration.ToString() $WntdTest.RequiresSupplementalContent.ToString() ($WntdTest.ScheduleOptions.ToString() -split ', ') $WntdTest.Status.ToString() $WntdTest.ExecutionState.ToString())) | ConvertTo-Json -Compress
+        @((New-Test $WntdTest.Name $WntdTest.Id $WntdTest.TestType.ToString() $WntdTest.EstimatedRuntime.ToString() $WntdTest.RequiresSpecialConfiguration.ToString() $WntdTest.RequiresSupplementalContent.ToString() (parsescheduleoptions($tTest.ScheduleOptions)) $WntdTest.Status.ToString() $WntdTest.ExecutionState.ToString())) | ConvertTo-Json -Compress
     }
 }
 #

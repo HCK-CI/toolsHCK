@@ -1383,7 +1383,14 @@ function queuetest {
     if (-Not [String]::IsNullOrEmpty($sup)) {
         if (-Not ($WntdSMachine = $WntdPool.GetMachines()| Where-Object { $_.Name -eq $sup })) { throw "The support machine was not found, aborting..." }
         $MachineSet = $WntdTest.GetMachineRole()
+        $RoleMachines = New-Object System.Collections.ArrayList
         foreach ($Role in $MachineSet.Roles) {
+            $RoleMachines.AddRange($Role.GetMachines())
+            $RoleMachines | foreach { $Role.RemoveMachine($_) }
+            $RoleMachines.Clear()
+            if ($Role.Name -eq "Client") {
+                $Role.AddMachine($WntdMachine)
+            }
             if ($Role.Name -eq "Support") {
                 $Role.AddMachine($WntdSMachine)
             }

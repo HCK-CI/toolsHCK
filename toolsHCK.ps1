@@ -889,7 +889,6 @@ function createprojecttarget {
         if (($WntdTarget.TargetType -eq "System") -and ($WntdPITargets | Where-Object { $_.TargetType -ne "System" })) { throw "The project already has non-system targets, can't mix system and non-system targets, aborting..." }
         if (($WntdTarget.TargetType -ne "System") -and ($WntdPITargets | Where-Object { $_.TargetType -eq "System" })) { throw "The project already has system targets, can't mix system and non-system targets, aborting..." }
         else {
-            if (-Not $json) { Write-Output "Creating a new project's target from $($WntdTarget.Name)." }
             $WntdtoTarget = New-Object System.Collections.ArrayList
             if ($WntdTarget.TargetType -eq "TargetCollection") {
                 foreach ($toTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
@@ -901,7 +900,8 @@ function createprojecttarget {
                 $WntdtoTarget.Add($WntdTarget) | Out-Null
             }
             foreach ($toTarget in $WntdtoTarget) {
-                if ($WntdPITargets | Where-Object { $_.Key -eq $toTarget.Key }) { throw "The target is already being targeted in the project, aborting..." }
+                if ($WntdPITargets | Where-Object { ($_.Key -eq $toTarget.Key) -and $_.Machine.Equals($toTarget.Machine) }) { continue }
+
                 switch ($toTarget.TargetType) {
                     "Filter" { [String[]]$HardwareIds = $toTarget.Key }
                     "System" { [String[]]$HardwareIds = "[SYSTEM]" }
@@ -910,7 +910,15 @@ function createprojecttarget {
                 if (-Not ($WntdDeviceFamily = $Manager.GetDeviceFamilies() | Where-Object { $_.Name -eq $HardwareIds[0] })) {
                     $WntdDeviceFamily = $Manager.CreateDeviceFamily($HardwareIds[0], $HardwareIds)
                 }
-                $WntdTargetFamily = $WntdPI.CreateTargetFamily($WntdDeviceFamily)
+
+                if ($WntdPITargets | Where-Object { ($_.Key -eq $toTarget.Key) }) {
+                    $WntdTargetFamily = ($WntdPITargets | Where-Object { ($_.Key -eq $toTarget.Key) })[0].TargetFamily
+                } else {
+                    $WntdTargetFamily = $WntdPI.CreateTargetFamily($WntdDeviceFamily)
+                }
+
+                if (-Not $json) { Write-Output "Creating a new project's target from $($toTarget.Name)." }
+
                 $WntdTargetFamily.CreateTarget($toTarget) | Out-Null
             }
         }

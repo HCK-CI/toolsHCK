@@ -1844,7 +1844,8 @@ function ziptestresultlogs {
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
     if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
     if (-Not ($WntdTest = $WntdPITarget.GetTests() | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
-    if (-Not ($WntdTest.GetTestResults().Count -ge 1)) { throw "The test hasen't been queued, can't find test results." } else { $WntdResult = $WntdTest.GetTestResults()[$result] }
+    if (-Not ($WntdResult = $WntdTest.GetTestResults()[$result])) { throw "Invalid test result index, can't find the test result." } else { $WntdLogs = $WntdResult.GetLogs() }
+    if (-Not ($WntdLogs.Count -ge 1)) { throw "There are no logs to be zipped in the test result." }
 
     $DayStamp = $(get-date).ToString("dd-MM-yyyy")
     $TimeStamp = $(get-date).ToString("hh_mm_ss")
@@ -1856,7 +1857,7 @@ function ziptestresultlogs {
         Write-Output "The test has $($WntdResult.Status)!."
         Write-Output "Logs zipped to $ZipPath"
     }
-    foreach ($Log in $WntdResult.GetLogs()) {
+    foreach ($Log in $WntdLogs) {
         $Log.WriteLogTo([System.IO.Path]::Combine($LogsDir, $Log.LogType, $Log.Name))
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem

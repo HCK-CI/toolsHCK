@@ -10,7 +10,7 @@
 
 # server switch to inform the script is to run as a server
 [CmdletBinding()]
-param([Switch]$server)
+param([Switch]$server, [Int]$port = 4000, [Int]$timeout = 60, [Int]$polling = 10)
 
 if ($env:WTTSTDIO -like "*\Hardware Certification Kit\*") {
     $Studio = "hck"
@@ -23,15 +23,17 @@ if ($env:WTTSTDIO -like "*\Hardware Certification Kit\*") {
 
         $PowerShell = [System.IO.Path]::Combine($PSHOME.tolower().replace("system32","sysWOW64"), "powershell.exe")
 
-        if ($MyInvocation.Line) {
+        $Params = [String]::Empty
 
-            &"$PowerShell" -NoProfile $MyInvocation.Line
-        }else{
-
-            &"$PowerShell" -NoProfile -File "$($MyInvocation.InvocationName)"
+        if ($server) {
+            $Params += "-server -port $port -timeout $timeout -polling $polling"
         }
 
-    exit $LASTEXITCODE
+        $Invocation = "$PSCommandPath $Params"
+
+        Invoke-Expression "Invoke-Command -ScriptBlock { $PowerShell -File $Invocation }"
+
+        exit $LASTEXITCODE
     }
 } else {
     $Studio = "hlk"
@@ -1910,19 +1912,35 @@ function createprojectpackage {
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
 
     [Int]$global:Steps = 1
+    if ($server) {
+        $global:StepsArray = New-Object System.Collections.ArrayList
+    }
 
     [Action[Microsoft.Windows.Kits.Hardware.ObjectModel.Submission.PackageProgressInfo]]$action = {
         param([Microsoft.Windows.Kits.Hardware.ObjectModel.Submission.PackageProgressInfo]$progressinfo)
 
         if (($progressinfo.Current -eq 0) -and ($progressinfo.Maximum -eq 0)) {
             $jsonprogressinfo = @(New-PackageProgressInfo $progressinfo.Current $progressinfo.Maximum $progressinfo.Message) | ConvertTo-Json -Compress
+            if ($server) {
+                $global:StepsArray.Add($jsonprogressinfo) | Out-Null
+            }
             Write-Host $jsonprogressinfo
         } else {
             if ($global:Steps -lt $progressinfo.Current) {
-                Write-Host -NoNewline "toolsHCK@$($ControllerName):createprojectpackage($project)> "
-                [Int]$global:Steps = Read-Host
+                if ($server) {
+                    $JoinedSteps = $global:StepsArray -join [Environment]::NewLine
+                    $global:StepsArray.Clear()
+                    sendtcpsocket($JoinedSteps)
+                    [Int]$global:Steps = receivetcpsocket
+                } else {
+                    Write-Host -NoNewline "toolsHCK@$($ControllerName):createprojectpackage($project)> "
+                    [Int]$global:Steps = Read-Host
+                }
             }
             $jsonprogressinfo = @(New-PackageProgressInfo $progressinfo.Current $progressinfo.Maximum $progressinfo.Message) | ConvertTo-Json -Compress
+            if ($server) {
+                $global:StepsArray.Add($jsonprogressinfo) | Out-Null
+            }
             Write-Host $jsonprogressinfo
         }
     }
@@ -1942,6 +1960,29 @@ function createprojectpackage {
     } else {
         @(New-ProjectPackage $WntdProject.Name $PackagePath) | ConvertTo-Json -Compress
     }
+}
+#
+# GetTimeStamp
+function gettimestamp {
+    $DayStamp = $(get-date).ToString("dd-MM-yyyy")
+    $TimeStamp = $(get-date).ToString("hh_mm_ss")
+    return "[$DayStamp`_$TimeStamp]"
+}
+#
+# SendTCPSocket
+function sendtcpsocket {
+    [CmdletBinding()]
+    param([String]$data)
+
+    $LengthString = "$($data.Length.ToString())$([Environment]::NewLine)"
+    $TCPStream.Write([System.Text.Encoding]::Ascii.GetBytes($LengthString), 0, $LengthString.Length)
+    $TCPStream.Write([System.Text.Encoding]::Ascii.GetBytes($data), 0, $data.Length)
+}
+#
+# ReceiveTCPSocket
+function receivetcpsocket {
+    while (-Not $TCPStream.DataAvailable) { Start-Sleep -Milliseconds $PollingSleep }
+    $TCPStreamReader.ReadLine().TrimEnd()
 }
 #
 # Usage
@@ -2053,34 +2094,38 @@ $RootPool = $Manager.GetRootMachinePool()
 $DefaultPool = $RootPool.DefaultPool
 
 if ($server) {
-    Write-Output "Initializing input server's named pipe at \\.\pipe\toolsHCKIn"
-    Write-Output "Waiting for input client connection..."
-    $toolsHCKInPipe = New-Object System.IO.Pipes.NamedPipeServerStream "\\.\pipe\toolsHCKIn"
-    $toolsHCKInPipe.WaitForConnection()
-    Write-Output "Input client is connected"
-
-    Write-Output "Connecting to output server's named pipe at \\.\pipe\toolsHCKOut"
-    $toolsHCKOutPipe = New-Object System.IO.Pipes.NamedPipeClientStream "\\.\pipe\toolsHCKOut"
-    while (-Not $toolsHCKOutPipe.IsConnected) {
-        try {
-            $toolsHCKOutPipe.Connect(500)
-        } catch [TimeoutException] {
-            # NOTHING
-        }
+    Write-Output "Initializing server's TCP listener"
+    try {
+    $TCPListener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse('0.0.0.0'), $port)
+    $TCPListener.Start()
+    } catch [System.Net.Sockets.SocketException] {
+        Write-Output "Starting TCP listener failed due to: $_.Exception.Message"
+        exit -1
     }
-    Write-Output "Connected to output server"
 
-    $toolsHCKOutPipeSw = New-Object System.IO.StreamWriter $toolsHCKOutPipe
+    Write-Output "Waiting for a TCP client connection on port $port..."
+    $TCPClientTask = $TCPListener.AcceptTcpClientAsync()
+    if ($TCPClientTask.Wait($timeout*1000)) {
+        Write-Output "TCP client is connected"
+        $TCPClient = $TCPClientTask.Result
+    } else {
+        Write-Output "Waiting for a TCP client connection has timed out after $timeout seconds"
+        $TCPListener.Stop()
+        exit -1
+    }
 
-    $toolsHCKInPipeSr = New-Object System.IO.StreamReader $toolsHCKInPipe
+    $TCPStream = $TCPClient.GetStream()
+    $TCPStreamReader = New-Object System.IO.StreamReader $TCPStream, System.Text.ASCIIEncoding
+    $PollingSleep = [Math]::Ceiling(1000 / $polling)
 
-    $toolsHCKOutPipeSw.WriteLine($ControllerName)
-    $toolsHCKOutPipeSw.Flush()
+    Write-Host (gettimestamp) "sending START"
+    sendtcpsocket("START")
 }
 
 while($true) {
     if ($server) {
-        $cmdline = $toolsHCKInPipeSr.ReadLine()
+        $cmdline = receivetcpsocket
+        Write-Host (gettimestamp) "received ($cmdline), processing..."
     } else {
         Write-Host -NoNewline "toolsHCK@$ControllerName> "
         $cmdline = Read-Host
@@ -2100,7 +2145,11 @@ while($true) {
     if ([String]::IsNullOrEmpty($cmd) -or $cmd -eq "help") {
         $output = Usage
     } elseif ($cmd -eq "exit") {
-        break
+        if ($server) {
+            Write-Host (gettimestamp) "sending END"
+            sendtcpsocket("END")
+        }
+        break;
     } elseif ($cmd -eq "ping") {
         $output = "pong"
     } elseif ($toolsHCKlist.Contains($cmd)) {
@@ -2126,22 +2175,20 @@ while($true) {
         $output = "No such action name, type help."
     }
 
+    $JoinedOutput = $output -join [Environment]::NewLine
+
     if ($server) {
-        $toolsHCKOutPipeSw.WriteLine()
-        $output | foreach {
-            $toolsHCKOutPipeSw.WriteLine($_)
-        }
-        $toolsHCKOutPipeSw.Flush()
+        Write-Host (gettimestamp) "sending result for ($cmdline):"
+        Write-Host $JoinedOutput
+        sendtcpsocket($JoinedOutput)
     } else {
-        $output | foreach {
-            Write-Host $_
-        }
+        Write-Host $JoinedOutput
     }
 }
 
 if ($server) {
-    $toolsHCKOutPipeSw.Dispose()
-    $toolsHCKOutPipe.Dispose()
-    $toolsHCKInPipeSr.Dispose()
-    $toolsHCKInPipe.Dispose()
+    $TCPStreamReader.Close()
+    $TCPStream.Close()
+    $TCPClient.Close()
+    $TCPListener.Stop()
 }

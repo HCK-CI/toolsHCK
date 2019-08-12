@@ -1280,8 +1280,21 @@ function gettestinfo {
     if (-Not ($WntdTarget = $WntdMachine.GetTestTargets() | Where-Object { $_.Key -eq $target })) { throw "A target that matches the target's key given was not found in the specified machine, aborting..." }
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
-    if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-    if (-Not ($WntdTest = $WntdPITarget.GetTests() | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
+    $WntdPITargets = New-Object System.Collections.ArrayList
+
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+    } else {
+        if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.Add($WntdPITarget) | Out-Null
+    }
+
+    $WntdTests = New-Object System.Collections.ArrayList
+    $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
+
+    if (-Not ($WntdTest = $WntdTests | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
 
     if (-Not $json) {
         Write-Output ""
@@ -1396,8 +1409,21 @@ function queuetest {
     if (-Not ($WntdTarget = $WntdMachine.GetTestTargets() | Where-Object { $_.Key -eq $target })) { throw "A target that matches the target's key given was not found in the specified machine, aborting..." }
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
-    if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-    if (-Not ($WntdTest = $WntdPITarget.GetTests() | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
+    $WntdPITargets = New-Object System.Collections.ArrayList
+
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+    } else {
+        if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.Add($WntdPITarget) | Out-Null
+    }
+
+    $WntdTests = New-Object System.Collections.ArrayList
+    $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
+
+    if (-Not ($WntdTest = $WntdTests | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
 
     if (-Not $json) { Write-Output "Queueing test $($WntdTest.Name)..." }
 
@@ -1575,8 +1601,22 @@ function applytestresultfilters {
     if (-Not ($WntdTarget = $WntdMachine.GetTestTargets() | Where-Object { $_.Key -eq $target })) { throw "A target that matches the target's key given was not found in the specified machine, aborting..." }
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
-    if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-    if (-Not ($WntdTest = $WntdPITarget.GetTests() | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
+    $WntdPITargets = New-Object System.Collections.ArrayList
+
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+    } else {
+        if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.Add($WntdPITarget) | Out-Null
+    }
+
+    $WntdTests = New-Object System.Collections.ArrayList
+    $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
+
+    if (-Not ($WntdTest = $WntdTests | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
     if (-Not ($WntdTest.GetTestResults().Count -ge 1)) { throw "The test hasen't been queued, can't find test results." } else { $WntdResult = $WntdTest.GetTestResults()[$result] }
 
     if (-Not $json) { Write-Output "Applying filters on test result..." }
@@ -1674,8 +1714,22 @@ function listtestresults {
     if (-Not ($WntdTarget = $WntdMachine.GetTestTargets() | Where-Object { $_.Key -eq $target })) { throw "A target that matches the target's key given was not found in the specified machine, aborting..." }
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
-    if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-    if (-Not ($WntdTest = $WntdPITarget.GetTests() | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
+    $WntdPITargets = New-Object System.Collections.ArrayList
+
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+    } else {
+        if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.Add($WntdPITarget) | Out-Null
+    }
+
+    $WntdTests = New-Object System.Collections.ArrayList
+    $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
+
+    if (-Not ($WntdTest = $WntdTests | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
     if (-Not ($WntdTest.GetTestResults().Count -ge 1)) { throw "The test hasen't been queued, can't find test results." } else { $WntdResults = $WntdTest.GetTestResults() }
 
     if (-Not $json) {
@@ -1844,8 +1898,22 @@ function ziptestresultlogs {
     if (-Not ($WntdTarget = $WntdMachine.GetTestTargets() | Where-Object { $_.Key -eq $target })) { throw "A target that matches the target's key given was not found in the specified machine, aborting..." }
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
-    if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-    if (-Not ($WntdTest = $WntdPITarget.GetTests() | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
+    $WntdPITargets = New-Object System.Collections.ArrayList
+
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+    } else {
+        if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
+        $WntdPITargets.Add($WntdPITarget) | Out-Null
+    }
+
+    $WntdTests = New-Object System.Collections.ArrayList
+    $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
+
+    if (-Not ($WntdTest = $WntdTests | Where-Object { $_.Id -eq $test })) { throw "Didn't find a test with the id given." }
+
     if (-Not ($WntdResult = $WntdTest.GetTestResults()[$result])) { throw "Invalid test result index, can't find the test result." } else { $WntdLogs = $WntdResult.GetLogs() }
     if (-Not ($WntdLogs.Count -ge 1)) { throw "There are no logs to be zipped in the test result." }
 

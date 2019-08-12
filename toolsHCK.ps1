@@ -1155,7 +1155,7 @@ function listtests {
             if ($tTest.GetTestTargets() | Where-Object { $WntdPITargets.Contains($_) }) { $WntdTests.Add($tTest) | Out-Null }
         }
     } else {
-         $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
+        $WntdPITargets | foreach { $WntdTests.AddRange($_.GetTests()) }
     }
 
     if (-Not $json) {

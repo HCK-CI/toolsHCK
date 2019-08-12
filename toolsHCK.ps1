@@ -1140,7 +1140,7 @@ function listtests {
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
         if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargets.AddRange($WntdPITargetsToAdd)
+        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null

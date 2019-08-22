@@ -1005,8 +1005,19 @@ function deleteprojecttarget {
     if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
     if (-Not ($WntdPI = $WntdProject.GetProductInstances() | Where-Object { $_.OSPlatform -eq $WntdMachine.OSPlatform })) { throw "Machine pool not targeted in the project." }
 
-    if (-Not $json) { Write-Output "Deleting a new project's target from $($WntdTarget.Name)." }
-    $WntdPI.DeleteTarget($WntdTarget.Key, $WntdTarget.Machine)
+    $WntdtoDelete = New-Object System.Collections.ArrayList
+    if ($WntdTarget.TargetType -eq "TargetCollection") {
+        foreach ($toDelete in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $toDelete.Key) -and ($_.Machine.Equals($toDelete.Machine)) } | foreach { $WntdtoDelete.Add($_) | Out-Null }
+        }
+    } else {
+        $WntdtoDelete.Add($WntdTarget) | Out-Null
+    }
+    foreach ($toDelete in $WntdtoDelete) {
+        if (-Not $json) { Write-Output "Deleting a new project's target from $($toDelete.Name)." }
+        $WntdPI.DeleteTarget($toDelete.Key, $toDelete.Machine)
+    }
+
     if ($WntdPI.GetTargets().Count -lt 1) { $WntdProject.DeleteProductInstance($WntdPI.Name) }
 }
 
@@ -1140,8 +1151,10 @@ function listtests {
     $WntdPITargets = New-Object System.Collections.ArrayList
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
-        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+        foreach ($tTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $tTarget.Key) -and ($_.Machine.Equals($tTarget.Machine)) } | foreach { $WntdPITargets.Add($_) | Out-Null }
+        }
+        if ($WntdPITargets.Count -lt 1) { throw "The target is not being targeted by the project." }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null
@@ -1285,8 +1298,10 @@ function gettestinfo {
     $WntdPITargets = New-Object System.Collections.ArrayList
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
-        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+        foreach ($tTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $tTarget.Key) -and ($_.Machine.Equals($tTarget.Machine)) } | foreach { $WntdPITargets.Add($_) | Out-Null }
+        }
+        if ($WntdPITargets.Count -lt 1) { throw "The target is not being targeted by the project." }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null
@@ -1414,8 +1429,10 @@ function queuetest {
     $WntdPITargets = New-Object System.Collections.ArrayList
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
-        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+        foreach ($tTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $tTarget.Key) -and ($_.Machine.Equals($tTarget.Machine)) } | foreach { $WntdPITargets.Add($_) | Out-Null }
+        }
+        if ($WntdPITargets.Count -lt 1) { throw "The target is not being targeted by the project." }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null
@@ -1606,8 +1623,10 @@ function applytestresultfilters {
     $WntdPITargets = New-Object System.Collections.ArrayList
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
-        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+        foreach ($tTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $tTarget.Key) -and ($_.Machine.Equals($tTarget.Machine)) } | foreach { $WntdPITargets.Add($_) | Out-Null }
+        }
+        if ($WntdPITargets.Count -lt 1) { throw "The target is not being targeted by the project." }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null
@@ -1719,8 +1738,10 @@ function listtestresults {
     $WntdPITargets = New-Object System.Collections.ArrayList
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
-        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+        foreach ($tTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $tTarget.Key) -and ($_.Machine.Equals($tTarget.Machine)) } | foreach { $WntdPITargets.Add($_) | Out-Null }
+        }
+        if ($WntdPITargets.Count -lt 1) { throw "The target is not being targeted by the project." }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null
@@ -1903,8 +1924,10 @@ function ziptestresultlogs {
     $WntdPITargets = New-Object System.Collections.ArrayList
 
     if ($WntdTarget.TargetType -eq "TargetCollection") {
-        if (-Not ($WntdPITargetsToAdd = $WntdPI.GetTargets() | Where-Object { ($_.ContainerId -eq $WntdTarget.ContainerId) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
-        $WntdPITargetsToAdd | foreach { $WntdPITargets.Add($_) | Out-Null }
+        foreach ($tTarget in $WntdPI.FindTargetFromContainer($WntdTarget.ContainerId)) {
+            $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $tTarget.Key) -and ($_.Machine.Equals($tTarget.Machine)) } | foreach { $WntdPITargets.Add($_) | Out-Null }
+        }
+        if ($WntdPITargets.Count -lt 1) { throw "The target is not being targeted by the project." }
     } else {
         if (-Not ($WntdPITarget = $WntdPI.GetTargets() | Where-Object { ($_.Key -eq $WntdTarget.Key) -and ($_.Machine.Equals($WntdMachine)) })) { throw "The target is not being targeted by the project." }
         $WntdPITargets.Add($WntdPITarget) | Out-Null

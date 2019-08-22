@@ -901,6 +901,7 @@ function createprojecttarget {
             } else {
                 $WntdtoTarget.Add($WntdTarget) | Out-Null
             }
+            if ($WntdtoTarget.Count -lt 1) { throw "No targets to create were found, aborting..." }
             foreach ($toTarget in $WntdtoTarget) {
                 if ($WntdPITargets | Where-Object { ($_.Key -eq $toTarget.Key) -and $_.Machine.Equals($toTarget.Machine) }) { continue }
 

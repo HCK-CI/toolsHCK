@@ -2180,7 +2180,12 @@ $ControllerName = $ConnectFile.Connection.GetAttribute("Server")
 $DatabaseName = $connectFile.Connection.GetAttribute("Source")
 
 Write-Output "Connecting to $ControllerName..."
-$Manager = New-Object Microsoft.Windows.Kits.Hardware.ObjectModel.DBConnection.DatabaseProjectManager $ControllerName, $DatabaseName
+$Manager = New-Object Microsoft.Windows.Kits.Hardware.ObjectModel.DBConnection.DatabaseProjectManager -Args $ControllerName, $DatabaseName
+if ($Manager -eq $null) {
+    Write-Output "Connecting to $ControllerName failed"
+    exit -1
+}
+
 
 $RootPool = $Manager.GetRootMachinePool()
 $DefaultPool = $RootPool.DefaultPool

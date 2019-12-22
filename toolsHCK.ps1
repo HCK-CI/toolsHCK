@@ -40,6 +40,7 @@ if ($env:WTTSTDIO -like "*\Hardware Certification Kit\*") {
 }
 
 ##
+$Version = "0.0.1"
 $MaxJsonDepth = 6
 ##
 
@@ -2241,6 +2242,8 @@ while($true) {
 
     if ([String]::IsNullOrEmpty($cmd) -or $cmd -eq "help") {
         $output = Usage
+    } elseif ($cmd -eq "version") {
+        $output = "toolsHCK Version: $Version"
     } elseif ($cmd -eq "exit") {
         if ($server) {
             Write-Host (gettimestamp) "sending END"

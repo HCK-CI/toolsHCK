@@ -169,10 +169,11 @@ function New-Project($name, $creationtime, $modifiedtime, $status, $productinsta
 
 #
 # Target
-function New-Target($name, $key) {
+function New-Target($name, $key, $type) {
     $target = New-Object PSObject
     $target | Add-Member -type NoteProperty -Name name -Value $name
     $target | Add-Member -type NoteProperty -Name key -Value $key
+    $target | Add-Member -type NoteProperty -Name type -value $type
     return $target
 }
 
@@ -635,7 +636,7 @@ function listmachinetargets {
     } else {
         $targetslist = New-Object System.Collections.ArrayList
         foreach ($TestTarget in $WntdMachine.GetTestTargets()) {
-            $targetslist.Add((New-Target $TestTarget.Name $TestTarget.Key)) | Out-Null
+            $targetslist.Add((New-Target $TestTarget.Name $TestTarget.Key $TestTarget.TargetType)) | Out-Null
         }
         ConvertTo-Json @($targetslist) -Compress
     }

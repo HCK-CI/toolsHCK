@@ -1326,13 +1326,13 @@ function gettestinfo {
         Write-Output "    Estimated runtime              : $($WntdTest.EstimatedRuntime)"
         Write-Output "    Requires special configuration : $($WntdTest.RequiresSpecialConfiguration)"
         Write-Output "    Requires supplemental content  : $($WntdTest.RequiresSupplementalContent)"
-        Write-Output "    Schedule options               : $((parsescheduleoptions($tTest.ScheduleOptions)) -Join ', ')"
+        Write-Output "    Schedule options               : $((parsescheduleoptions($WntdTest.ScheduleOptions)) -Join ', ')"
         Write-Output "    Test status                    : $($WntdTest.Status)"
         Write-Output "    Execution State                : $($WntdTest.ExecutionState)"
         Write-Output ""
         Write-Output "============================================="
     } else {
-        @((New-Test $WntdTest.Name $WntdTest.Id $WntdTest.TestType.ToString() $WntdTest.EstimatedRuntime.ToString() $WntdTest.RequiresSpecialConfiguration.ToString() $WntdTest.RequiresSupplementalContent.ToString() (parsescheduleoptions($tTest.ScheduleOptions)) $WntdTest.Status.ToString() $WntdTest.ExecutionState.ToString())) | ConvertTo-Json -Compress
+        @((New-Test $WntdTest.Name $WntdTest.Id $WntdTest.TestType.ToString() $WntdTest.EstimatedRuntime.ToString() $WntdTest.RequiresSpecialConfiguration.ToString() $WntdTest.RequiresSupplementalContent.ToString() (parsescheduleoptions($WntdTest.ScheduleOptions)) $WntdTest.Status.ToString() $WntdTest.ExecutionState.ToString())) | ConvertTo-Json -Compress
     }
 }
 #

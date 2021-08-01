@@ -1213,6 +1213,70 @@ function listtests {
     }
 }
 #
+# LoadPlaylist
+function loadplaylist {
+    [CmdletBinding()]
+    param([Switch]$help, [Parameter(Position=1)][String]$project, [Parameter(Position=2)][String]$playlist)
+
+    function Usage {
+        Write-Output "loadplaylist:"
+        Write-Output ""
+        Write-Output "A script that loads a playlist for a project."
+        Write-Output "These tasks are done by using the HCK\HLK API provided with the Windows HCK\HLK Studio."
+        Write-Output ""
+        Write-Output "Usage:"
+        Write-Output ""
+        Write-Output "loadplaylist <projectname> <playlist> [-help]"
+        Write-Output ""
+        Write-Output "Any parameter in [] is optional."
+        Write-Output ""
+        Write-Output "        help = Shows this message."
+        Write-Output ""
+        Write-Output " projectname = The name of the project."
+        Write-Output ""
+        Write-Output "    playlist = Path to the playlist file."
+        Write-Output ""
+        Write-Output "NOTE: Windows HCK\HLK Studio should be installed on the machine running the script!"
+    }
+
+    if ($help) {
+        if (-Not $json) { Usage; return } else { throw "Help requested, ignoring..." }
+    }
+
+    if ([String]::IsNullOrEmpty($project)) {
+        if (-Not $json) {
+            Write-Output "WARNING: Please provide a project's name."
+            Usage; return
+        } else {
+            throw "Please provide a project's name."
+        }
+    }
+    if ([String]::IsNullOrEmpty($playlist)) {
+        if (-Not $json) {
+            Write-Output "WARNING: Please provide a path to a playlist file."
+            Usage; return
+        } else {
+            throw "Please provide a path to a playlist file."
+        }
+    }
+    if ($Studio -ne "hlk") {
+        if (-Not $json) {
+            Write-Output "WARNING: HCK doesn't support playlists, aborting..."
+            Usage; return
+        } else {
+            throw "HCK doesn't support playlists, aborting..."
+        }
+    }
+
+    if (-Not ($Manager.GetProjectNames().Contains($project))) { throw "No project with the given name was found, aborting..." } else { $WntdProject = $Manager.GetProject($project) }
+
+    $PlaylistManager = New-Object Microsoft.Windows.Kits.Hardware.ObjectModel.PlaylistManager($WntdProject)
+
+    if (-Not $json) { Write-Output "Loading playlist $($playlist)..." }
+
+    $PlaylistManager.LoadPlaylist($playlist) | Out-Null
+}
+#
 # GetTestInfo
 function gettestinfo {
     [CmdletBinding()]
@@ -2142,6 +2206,8 @@ function Usage {
     Write-Output ""
     Write-Output "   createprojectpackage : Creates a project's package."
     Write-Output ""
+    Write-Output "           loadplaylist : Loads a playlist for a project into HLK Studio."
+    Write-Output ""
     Write-Output "NOTE: For more infromation about every action use action's -help parameter!"
     Write-Output "NOTE: Windows HCK\HLK Studio should be installed on the machine running the script!"
 }
@@ -2169,7 +2235,8 @@ $toolsHCKlist.AddRange( ("listpools",
                          "applytestresultfilters",
                          "listtestresults",
                          "ziptestresultlogs",
-                         "createprojectpackage") )
+                         "createprojectpackage",
+                         "loadplaylist") )
 
 # -------------------------------------- #
 # Trying to perform the requested action #

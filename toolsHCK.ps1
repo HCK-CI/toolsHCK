@@ -97,13 +97,14 @@ function New-TestResultLogsZip($testname, $testid,$status, $logszippath) {
 
 #
 # TestResult
-function New-TestResult($name, $completiontime, $scheduletime, $starttime, $status, $arefiltersapplied, $target, $tasks) {
+function New-TestResult($name, $completiontime, $scheduletime, $starttime, $status, $instanceid, $arefiltersapplied, $target, $tasks) {
     $testresult = New-Object PSObject
     $testresult | Add-Member -type NoteProperty -Name name -Value $name
     $testresult | Add-Member -type NoteProperty -Name completiontime -Value $completiontime
     $testresult | Add-Member -type NoteProperty -Name scheduletime -Value $scheduletime
     $testresult | Add-Member -type NoteProperty -Name starttime -Value $starttime
     $testresult | Add-Member -type NoteProperty -Name status -Value $status
+    $testresult | Add-Member -type NoteProperty -Name instanceid -Value $instanceid
     $testresult | Add-Member -type NoteProperty -Name arefiltersapplied -Value $arefiltersapplied
     $testresult | Add-Member -type NoteProperty -Name target -Value $target
     $testresult | Add-Member -type NoteProperty -Name tasks -Value $tasks
@@ -1886,7 +1887,7 @@ function listtestresults {
                 $taskslist.Add($tasktype) | Out-Null
             }
 
-            $testresultlist.Add((New-TestResult $tTestResult.Test.Name $tTestResult.CompletionTime.ToString() $tTestResult.ScheduleTime.ToString() $tTestResult.StartTime.ToString() $tTestResult.Status.ToString() $tTestResult.AreFiltersApplied.ToString() $tTestResult.Target.Name $taskslist)) | Out-Null
+            $testresultlist.Add((New-TestResult $tTestResult.Test.Name $tTestResult.CompletionTime.ToString() $tTestResult.ScheduleTime.ToString() $tTestResult.StartTime.ToString() $tTestResult.Status.ToString() $tTestResult.InstanceId.ToString() $tTestResult.AreFiltersApplied.ToString() $tTestResult.Target.Name $taskslist)) | Out-Null
         }
 
         ConvertTo-Json @($testresultlist) -Depth $MaxJsonDepth -Compress

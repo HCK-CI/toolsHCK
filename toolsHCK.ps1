@@ -1404,7 +1404,17 @@ function gettestinfo {
 # QueueTest
 function queuetest {
     [CmdletBinding()]
-    param([Switch]$help, [String]$sup, [String]$IPv6, [Parameter(Position=1)][String]$test, [Parameter(Position=2)][String]$target, [Parameter(Position=3)][String]$project, [Parameter(Position=4)][String]$machine, [Parameter(Position=5)][String]$pool)
+    param(
+        [Switch]$help, 
+        [String]$sup, 
+        [String]$IPv6, 
+        [Parameter(Position=1)][String]$test, 
+        [Parameter(Position=2)][String]$target, 
+        [Parameter(Position=3)][String]$project, 
+        [Parameter(Position=4)][String]$machine, 
+        [Parameter(Position=5)][String]$pool, 
+        [Parameter(Position=6)][String]$parameters
+    )
 
     function Usage {
         Write-Output "queuetest:"
@@ -1416,7 +1426,7 @@ function queuetest {
         Write-Output ""
         Write-Output "Usage:"
         Write-Output ""
-        Write-Output "queuetest <testid> <targetkey> <projectname> <testmachine> <poolname> [-sup <name>]"
+        Write-Output "queuetest <testid> <targetkey> <projectname> <testmachine> <poolname> <parameters> [-sup <name>]"
         Write-Output "              [-IPv6 <address>] [-help]"
         Write-Output ""
         Write-Output "Any parameter in [] is optional."
@@ -1433,6 +1443,8 @@ function queuetest {
         Write-Output "               NOTE: test machine should be in a READY state."
         Write-Output ""
         Write-Output "    poolname = The name of the pool."
+        Write-Output ""
+        Write-Output "    parameters = Additional parameters in the format 'name1=value1;name2=value2'."
         Write-Output ""
         Write-Output "        IPv6 = The support machines's ""SupportDevice0"" IPv6 address."
         Write-Output ""
@@ -1514,6 +1526,16 @@ function queuetest {
 
     if (-Not [String]::IsNullOrEmpty($IPv6)) {
         $WntdTest.SetParameter("WDTFREMOTESYSTEM", $IPv6, [Microsoft.Windows.Kits.Hardware.ObjectModel.ParameterSetAsDefault]::DoNotSetAsDefault) | Out-Null
+    }
+    
+    if (-Not [String]::IsNullOrEmpty($parameters)) {
+        $paramPairs = $parameters -split ';'
+        foreach ($pair in $paramPairs) {
+            $nameValue = $pair -split '='
+            if ($nameValue.Length -eq 2) {
+                $WntdTest.SetParameter($nameValue[0], $nameValue[1], [Microsoft.Windows.Kits.Hardware.ObjectModel.ParameterSetAsDefault]::DoNotSetAsDefault) | Out-Null
+            }
+        }
     }
 
     if (-Not [String]::IsNullOrEmpty($sup)) {

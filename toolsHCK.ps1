@@ -2104,6 +2104,15 @@ function createprojectpackage {
         }
     }
 
+    $PlaylistManager = $null
+    if (-Not [String]::IsNullOrEmpty($playlist)) {
+        $PlaylistManager = New-Object Microsoft.Windows.Kits.Hardware.ObjectModel.PlaylistManager($WntdProject)
+
+        if (-Not $json) { Write-Output "Loading playlist $($playlist)..." }
+
+        $PlaylistManager.LoadPlaylist($playlist) | Out-Null
+    }
+
     if (-Not [String]::IsNullOrEmpty($package)) {
         $PackagePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($package)
     } else {
@@ -2114,6 +2123,13 @@ function createprojectpackage {
     if ($rph) { $PackageWriter.SetProgressActionHandler($action) }
     $PackageWriter.Save($PackagePath)
     $PackageWriter.Dispose()
+
+    if ($PlaylistManager) {
+        if (-Not $json) { Write-Output "Unloading playlist" }
+
+        $PlaylistManager.UnloadPlaylist()
+    }
+
     if (-Not $json) {
         Write-Output "Packaged to $($PackagePath)..."
     } else {

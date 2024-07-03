@@ -2031,7 +2031,7 @@ function ziptestresultlogs {
 # CreateProjectPackage
 function createprojectpackage {
     [CmdletBinding()]
-    param([Switch]$help, [Switch]$rph, [Parameter(Position=1)][String]$project, [Parameter(Position=2)][String]$package)
+    param([Switch]$help, [Switch]$rph, [String]$playlist, [Parameter(Position=1)][String]$project, [Parameter(Position=2)][String]$package)
 
     function Usage {
         Write-Output "createprojectpackage:"
@@ -2042,7 +2042,7 @@ function createprojectpackage {
         Write-Output ""
         Write-Output "Usage:"
         Write-Output ""
-        Write-Output "createprojectpackage <projectname> [<package>] [-help]"
+        Write-Output "createprojectpackage <projectname> [<package>] [-help] [-playlist]"
         Write-Output ""
         Write-Output "Any parameter in [] is optional."
         Write-Output ""
@@ -2051,6 +2051,8 @@ function createprojectpackage {
         Write-Output " projectname = The name of the project."
         Write-Output ""
         Write-Output "     package = The path to the output package file."
+        Write-Output ""
+        Write-Output "    playlist = Path to the playlist file."
         Write-Output ""
         Write-Output "NOTE: Windows HCK\HLK Studio should be installed on the machine running the script!"
     }

@@ -1404,7 +1404,16 @@ function gettestinfo {
 # QueueTest
 function queuetest {
     [CmdletBinding()]
-    param([Switch]$help, [String]$sup, [String]$IPv6, [Parameter(Position=1)][String]$test, [Parameter(Position=2)][String]$target, [Parameter(Position=3)][String]$project, [Parameter(Position=4)][String]$machine, [Parameter(Position=5)][String]$pool)
+    param(
+        [Switch]$help,
+        [String]$sup,
+        [String]$IPv6,
+        [Parameter(Position=1)][String]$test,
+        [Parameter(Position=2)][String]$target,
+        [Parameter(Position=3)][String]$project,
+        [Parameter(Position=4)][String]$machine,
+        [Parameter(Position=5)][String]$pool
+    )
 
     function Usage {
         Write-Output "queuetest:"

@@ -1407,6 +1407,7 @@ function queuetest {
     param(
         [Switch]$help,
         [String]$sup,
+        [String]$parameters,
         [String]$IPv6,
         [Parameter(Position=1)][String]$test,
         [Parameter(Position=2)][String]$target,
@@ -1426,7 +1427,7 @@ function queuetest {
         Write-Output "Usage:"
         Write-Output ""
         Write-Output "queuetest <testid> <targetkey> <projectname> <testmachine> <poolname> [-sup <name>]"
-        Write-Output "              [-IPv6 <address>] [-help]"
+        Write-Output "              [-IPv6 <address>] [-help] [-parameters <parameters>]"
         Write-Output ""
         Write-Output "Any parameter in [] is optional."
         Write-Output ""
@@ -1444,6 +1445,8 @@ function queuetest {
         Write-Output "    poolname = The name of the pool."
         Write-Output ""
         Write-Output "        IPv6 = The support machines's ""SupportDevice0"" IPv6 address."
+        Write-Output ""
+        Write-Output "  parameters = Additional parameters in JSON format '{ ParameterName1: ParameterValue, ParameterName2: ParameterValue2 }'."
         Write-Output ""
         Write-Output "         sup = The support machine's name as registered with the HCK\HLK controller."
         Write-Output "               NOTE: test machine should be in a READY state."
@@ -1523,6 +1526,13 @@ function queuetest {
 
     if (-Not [String]::IsNullOrEmpty($IPv6)) {
         $WntdTest.SetParameter("WDTFREMOTESYSTEM", $IPv6, [Microsoft.Windows.Kits.Hardware.ObjectModel.ParameterSetAsDefault]::DoNotSetAsDefault) | Out-Null
+    }
+
+    if (-Not [String]::IsNullOrEmpty($parameters)) {
+        $parametersHashtable = ConvertFrom-Json $parameters
+        foreach ($parameter in $parametersHashtable.PSObject.Properties) {
+            $WntdTest.SetParameter($parameter.Name, $parameter.Value, [Microsoft.Windows.Kits.Hardware.ObjectModel.ParameterSetAsDefault]::DoNotSetAsDefault) | Out-Null 
+        }
     }
 
     if (-Not [String]::IsNullOrEmpty($sup)) {

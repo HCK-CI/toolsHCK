@@ -2030,8 +2030,10 @@ function ziptestresultlogs {
     $DayStamp = $(get-date).ToString("dd-MM-yyyy")
     $TimeStamp = $(get-date).ToString("hh_mm_ss")
 
+    $SafeTestName = ($WntdTest.Name -replace '[^\w\-\.]', '_').Trim('_')
+
     $LogsDir = $env:TEMP + "\prometheus_test_logs\$DayStamp\[$TimeStamp]" + $WntdTest.Id
-    $ZipPath = $env:TEMP + "\prometheus_test_logs\$DayStamp\$DayStamp" + "_" + $TimeStamp + "_" + $WntdTest.Id + ".zip"
+    $ZipPath = $env:TEMP + "\prometheus_test_logs\$DayStamp\$DayStamp" + "_" + $TimeStamp + "_" + $SafeTestName + ".zip"
 
     if (-Not $json) {
         Write-Output "The test has $($WntdResult.Status)!."

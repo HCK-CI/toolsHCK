@@ -1,3 +1,6 @@
+# Tool moved to rtoolsHCK gem https://github.com/HCK-CI/rtoolsHCK/blob/master/tools/
+
+Please open any issues related to toolsHCK in https://github.com/HCK-CI/rtoolsHCK repo
 
 # toolsHCK
 
@@ -50,7 +53,7 @@ Connecting to HLK-STUDIO...
 toolsHCK@HLK-STUDIO> createpool 'test'
 Creating pool test in Root pool.
 toolsHCK@HLK-STUDIO> exit
-PS C:\> 
+PS C:\>
 ```
 
 For more info use help command or use help parameter of a command, example:
@@ -61,4 +64,3 @@ toolsHCK@HLK-STUDIO> createpool -help
 ## Authors
 
 * **Bishara AbuHattoum**
-
